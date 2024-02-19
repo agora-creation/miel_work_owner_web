@@ -1,0 +1,11 @@
+{
+  "hosting": {
+    "site": "miel-work-owner",
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}
