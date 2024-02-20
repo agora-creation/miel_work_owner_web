@@ -89,11 +89,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                           if (error != null) {
                             if (!mounted) return;
-                            showMessage(context, error, true);
+                            showMessage(context, error, false);
                             return;
                           }
                           if (!mounted) return;
-                          showMessage(context, 'ログインに成功しました', false);
+                          showMessage(context, 'ログインに成功しました', true);
                           Navigator.pushReplacement(
                             context,
                             FluentPageRoute(
