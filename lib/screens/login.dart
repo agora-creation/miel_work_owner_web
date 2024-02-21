@@ -41,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   Text(
-                    '統括管理者用',
+                    '統括管理画面',
                     style: TextStyle(
                       color: kWhiteColor,
                       fontSize: 18,

@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:miel_work_owner_web/models/organization.dart';
 
 class OrganizationService {
   String collection = 'organization';
@@ -17,17 +16,10 @@ class OrganizationService {
     firestore.collection(collection).doc(values['id']).update(values);
   }
 
-  Future<List<OrganizationModel>> selectList() async {
-    List<OrganizationModel> ret = [];
-    await firestore
+  Stream<QuerySnapshot<Map<String, dynamic>>>? streamList() {
+    return FirebaseFirestore.instance
         .collection(collection)
         .orderBy('createdAt', descending: true)
-        .get()
-        .then((value) {
-      for (DocumentSnapshot<Map<String, dynamic>> map in value.docs) {
-        ret.add(OrganizationModel.fromSnapshot(map));
-      }
-    });
-    return ret;
+        .snapshots();
   }
 }

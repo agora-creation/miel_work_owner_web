@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:miel_work_owner_web/common/functions.dart';
 import 'package:miel_work_owner_web/common/style.dart';
@@ -6,6 +7,7 @@ import 'package:miel_work_owner_web/providers/login.dart';
 import 'package:miel_work_owner_web/screens/login.dart';
 import 'package:miel_work_owner_web/screens/organization_source.dart';
 import 'package:miel_work_owner_web/services/organization.dart';
+import 'package:miel_work_owner_web/services/user.dart';
 import 'package:miel_work_owner_web/widgets/custom_button_sm.dart';
 import 'package:miel_work_owner_web/widgets/custom_column_label.dart';
 import 'package:miel_work_owner_web/widgets/custom_data_grid.dart';
@@ -22,21 +24,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   OrganizationService organizationService = OrganizationService();
-  List<OrganizationModel> organizations = [];
-
-  Future _getData() async {
-    List<OrganizationModel> tmpOrganizations =
-        await organizationService.selectList();
-    setState(() {
-      organizations = tmpOrganizations;
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _getData();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'みえるWORK - 統括管理者用',
+              'みえるWORK - 統括管理画面',
               style: TextStyle(
                 color: kWhiteColor,
                 fontSize: 18,
@@ -75,43 +62,47 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      content: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '団体一覧',
-                        style: TextStyle(fontSize: 16),
+      content: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'この『みえるWORK』の利用契約を結んでいる団体を一覧表示しています。',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    CustomButtonSm(
+                      labelText: '契約団体を追加',
+                      labelColor: kWhiteColor,
+                      backgroundColor: kBlueColor,
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (context) => const AddDialog(),
                       ),
-                      CustomButtonSm(
-                        labelText: '新規登録',
-                        labelColor: kWhiteColor,
-                        backgroundColor: kBlueColor,
-                        onPressed: () => showDialog(
-                          context: context,
-                          builder: (context) => AddDialog(
-                            getData: _getData,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 650,
-                    child: CustomDataGrid(
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: organizationService.streamList(),
+                  builder: (context, snapshot) {
+                    List<OrganizationModel> organizations = [];
+                    if (snapshot.hasData) {
+                      for (DocumentSnapshot<Map<String, dynamic>> doc
+                          in snapshot.data!.docs) {
+                        organizations.add(OrganizationModel.fromSnapshot(doc));
+                      }
+                    }
+                    return CustomDataGrid(
                       source: OrganizationSource(
                         context: context,
                         organizations: organizations,
-                        getData: _getData,
                       ),
                       columns: [
                         GridColumn(
@@ -119,22 +110,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           label: const CustomColumnLabel('団体名'),
                         ),
                         GridColumn(
-                          columnName: 'loginId',
-                          label: const CustomColumnLabel('ログインID'),
-                        ),
-                        GridColumn(
-                          columnName: 'password',
-                          label: const CustomColumnLabel('パスワード'),
-                        ),
-                        GridColumn(
                           columnName: 'edit',
                           label: const CustomColumnLabel('操作'),
                         ),
                       ],
-                    ),
-                  ),
-                ],
-              ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ),
@@ -144,12 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class AddDialog extends StatefulWidget {
-  final Function() getData;
-
-  const AddDialog({
-    required this.getData,
-    super.key,
-  });
+  const AddDialog({super.key});
 
   @override
   State<AddDialog> createState() => _AddDialogState();
@@ -157,15 +135,17 @@ class AddDialog extends StatefulWidget {
 
 class _AddDialogState extends State<AddDialog> {
   OrganizationService organizationService = OrganizationService();
-  TextEditingController nameController = TextEditingController();
-  TextEditingController loginIdController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
+  UserService userService = UserService();
+  TextEditingController organizationNameController = TextEditingController();
+  TextEditingController userNameController = TextEditingController();
+  TextEditingController userEmailController = TextEditingController();
+  TextEditingController userPasswordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return ContentDialog(
       title: const Text(
-        '団体 - 新規登録',
+        '契約団体を追加する',
         style: TextStyle(fontSize: 18),
       ),
       content: SingleChildScrollView(
@@ -176,7 +156,7 @@ class _AddDialogState extends State<AddDialog> {
             InfoLabel(
               label: '団体名',
               child: CustomTextBox(
-                controller: nameController,
+                controller: organizationNameController,
                 placeholder: '',
                 keyboardType: TextInputType.text,
                 maxLines: 1,
@@ -184,9 +164,9 @@ class _AddDialogState extends State<AddDialog> {
             ),
             const SizedBox(height: 8),
             InfoLabel(
-              label: 'ログインID',
+              label: '管理者のお名前',
               child: CustomTextBox(
-                controller: loginIdController,
+                controller: userNameController,
                 placeholder: '',
                 keyboardType: TextInputType.text,
                 maxLines: 1,
@@ -194,13 +174,22 @@ class _AddDialogState extends State<AddDialog> {
             ),
             const SizedBox(height: 8),
             InfoLabel(
-              label: 'パスワード',
+              label: '管理者のメールアドレス',
               child: CustomTextBox(
-                controller: passwordController,
+                controller: userEmailController,
+                placeholder: '',
+                keyboardType: TextInputType.emailAddress,
+                maxLines: 1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            InfoLabel(
+              label: '管理者のパスワード',
+              child: CustomTextBox(
+                controller: userPasswordController,
                 placeholder: '',
                 keyboardType: TextInputType.visiblePassword,
                 maxLines: 1,
-                obscureText: true,
               ),
             ),
           ],
@@ -214,24 +203,53 @@ class _AddDialogState extends State<AddDialog> {
           onPressed: () => Navigator.pop(context),
         ),
         CustomButtonSm(
-          labelText: '登録する',
+          labelText: '追加する',
           labelColor: kWhiteColor,
           backgroundColor: kBlueColor,
           onPressed: () async {
-            if (nameController.text == '') return;
-            if (loginIdController.text == '') return;
-            if (passwordController.text == '') return;
-            String id = organizationService.id();
-            organizationService.create({
-              'id': id,
-              'name': nameController.text,
-              'loginId': loginIdController.text,
-              'password': passwordController.text,
+            String? error;
+            if (organizationNameController.text == '') {
+              error = '団体名を入力してください';
+            }
+            if (userNameController.text == '') {
+              error = '管理者のお名前を入力してください';
+            }
+            if (userEmailController.text == '') {
+              error = '管理者のメールアドレスを入力してください';
+            }
+            if (userPasswordController.text == '') {
+              error = '管理者のパスワードを入力してください';
+            }
+            if (await userService.emailCheck(
+              email: userEmailController.text,
+            )) {
+              error = '他のメールアドレスを入力してください';
+            }
+            if (error != null) {
+              if (!mounted) return;
+              showMessage(context, error, false);
+              return;
+            }
+            String userId = userService.id();
+            userService.create({
+              'id': userId,
+              'name': userNameController.text,
+              'email': userEmailController.text,
+              'password': userPasswordController.text,
+              'uid': '',
+              'token': '',
               'createdAt': DateTime.now(),
             });
-            await widget.getData();
+            String organizationId = organizationService.id();
+            organizationService.create({
+              'id': organizationId,
+              'name': organizationNameController.text,
+              'adminUserId': userId,
+              'userIds': [userId],
+              'createdAt': DateTime.now(),
+            });
             if (!mounted) return;
-            showMessage(context, '団体情報を新規登録しました', true);
+            showMessage(context, '契約団体を追加しました', true);
             Navigator.pop(context);
           },
         ),
