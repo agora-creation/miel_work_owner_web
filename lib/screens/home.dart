@@ -37,9 +37,9 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'みえるWORK - 統括管理画面',
+              'ひろめWORK - 統括管理画面',
               style: TextStyle(
-                color: kWhiteColor,
+                color: kBlackColor,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'この『みえるWORK』の利用契約を結んでいる団体を一覧表示しています。',
+                      'この『ひろめWORK』の利用契約を結んでいる団体を一覧表示しています。',
                       style: TextStyle(fontSize: 14),
                     ),
                     CustomButtonSm(
@@ -89,33 +89,39 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                  stream: organizationService.streamList(),
-                  builder: (context, snapshot) {
-                    List<OrganizationModel> organizations = [];
-                    if (snapshot.hasData) {
-                      for (DocumentSnapshot<Map<String, dynamic>> doc
-                          in snapshot.data!.docs) {
-                        organizations.add(OrganizationModel.fromSnapshot(doc));
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: organizationService.streamList(),
+                    builder: (context, snapshot) {
+                      List<OrganizationModel> organizations = [];
+                      if (snapshot.hasData) {
+                        for (DocumentSnapshot<Map<String, dynamic>> doc
+                            in snapshot.data!.docs) {
+                          organizations
+                              .add(OrganizationModel.fromSnapshot(doc));
+                        }
                       }
-                    }
-                    return CustomDataGrid(
-                      source: OrganizationSource(
-                        context: context,
-                        organizations: organizations,
-                      ),
-                      columns: [
-                        GridColumn(
-                          columnName: 'name',
-                          label: const CustomColumnLabel('団体名'),
+                      if (organizations.isEmpty) {
+                        return const Center(child: Text('契約している団体が存在しません'));
+                      }
+                      return CustomDataGrid(
+                        source: OrganizationSource(
+                          context: context,
+                          organizations: organizations,
                         ),
-                        GridColumn(
-                          columnName: 'edit',
-                          label: const CustomColumnLabel('操作'),
-                        ),
-                      ],
-                    );
-                  },
+                        columns: [
+                          GridColumn(
+                            columnName: 'name',
+                            label: const CustomColumnLabel('団体名'),
+                          ),
+                          GridColumn(
+                            columnName: 'edit',
+                            label: const CustomColumnLabel('操作'),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
@@ -244,7 +250,7 @@ class _AddDialogState extends State<AddDialog> {
             organizationService.create({
               'id': organizationId,
               'name': organizationNameController.text,
-              'adminUserId': userId,
+              'adminUserIds': [userId],
               'userIds': [userId],
               'createdAt': DateTime.now(),
             });

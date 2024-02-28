@@ -34,10 +34,6 @@ class OrganizationSource extends DataGridSource {
           columnName: 'name',
           value: organization.name,
         ),
-        DataGridCell(
-          columnName: 'adminUserId',
-          value: organization.adminUserId,
-        ),
       ]);
     }).toList();
   }
@@ -57,7 +53,6 @@ class OrganizationSource extends DataGridSource {
       (e) => e.id == '${row.getCells()[0].value}',
     );
     cells.add(CustomColumnLabel('${row.getCells()[1].value}'));
-
     cells.add(Row(
       children: [
         CustomButtonSm(
@@ -73,7 +68,7 @@ class OrganizationSource extends DataGridSource {
         ),
         const SizedBox(width: 4),
         CustomButtonSm(
-          labelText: '管理者変更',
+          labelText: '管理者選択',
           labelColor: kWhiteColor,
           backgroundColor: kOrangeColor,
           onPressed: () => showDialog(
@@ -232,15 +227,17 @@ class _AdminDialogState extends State<AdminDialog> {
   OrganizationService organizationService = OrganizationService();
   UserService userService = UserService();
   List<UserModel> users = [];
-  UserModel? selectedUser;
+  List<UserModel> selectedUsers = [];
 
   void _init() async {
     users = await userService.selectList(
       userIds: widget.organization.userIds,
     );
-    selectedUser = await userService.selectData(
-      id: widget.organization.adminUserId,
-    );
+    for (UserModel user in users) {
+      if (widget.organization.adminUserIds.contains(user.id)) {
+        selectedUsers.add(user);
+      }
+    }
     setState(() {});
   }
 
@@ -254,39 +251,26 @@ class _AdminDialogState extends State<AdminDialog> {
   Widget build(BuildContext context) {
     return ContentDialog(
       title: const Text(
-        '管理者変更',
+        '管理者を選択する',
         style: TextStyle(fontSize: 18),
       ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            InfoLabel(
-              label: '現在の管理者',
-              child: Text('${selectedUser?.name}'),
-            ),
-            const SizedBox(height: 16),
-            const Center(child: Icon(FluentIcons.down)),
-            const SizedBox(height: 16),
-            ComboBox(
-              isExpanded: true,
-              value: selectedUser,
-              items: users.map((user) {
-                return ComboBoxItem(
-                  value: user,
-                  child: Text(user.name),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedUser = value;
-                });
-              },
-              placeholder: const Text('スタッフを選択してください'),
-            ),
-          ],
-        ),
+      content: ListView.builder(
+        itemCount: users.length,
+        itemBuilder: (context, index) {
+          UserModel user = users[index];
+          return Checkbox(
+            checked: selectedUsers.contains(user),
+            onChanged: (value) {
+              if (selectedUsers.contains(user)) {
+                selectedUsers.remove(user);
+              } else {
+                selectedUsers.add(user);
+              }
+              setState(() {});
+            },
+            content: Text(user.name),
+          );
+        },
       ),
       actions: [
         CustomButtonSm(
@@ -296,25 +280,29 @@ class _AdminDialogState extends State<AdminDialog> {
           onPressed: () => Navigator.pop(context),
         ),
         CustomButtonSm(
-          labelText: '変更する',
+          labelText: '入力内容を保存',
           labelColor: kWhiteColor,
           backgroundColor: kBlueColor,
           onPressed: () async {
             String? error;
-            if (selectedUser == null) {
-              error = 'スタッフを選択してください';
+            if (selectedUsers.isEmpty) {
+              error = 'スタッフを一人以上選択してください';
             }
             if (error != null) {
               if (!mounted) return;
               showMessage(context, error, false);
               return;
             }
+            List<String> adminUserIds = [];
+            for (UserModel user in selectedUsers) {
+              adminUserIds.add(user.id);
+            }
             organizationService.update({
               'id': widget.organization.id,
-              'adminUserId': selectedUser?.id,
+              'adminUserIds': adminUserIds,
             });
             if (!mounted) return;
-            showMessage(context, '管理者を変更しました', true);
+            showMessage(context, '管理者を選択しました', true);
             Navigator.pop(context);
           },
         ),
