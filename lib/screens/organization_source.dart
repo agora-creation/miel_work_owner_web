@@ -70,7 +70,7 @@ class OrganizationSource extends DataGridSource {
         CustomButtonSm(
           labelText: '管理者選択',
           labelColor: kWhiteColor,
-          backgroundColor: kOrangeColor,
+          backgroundColor: kGreyColor,
           onPressed: () => showDialog(
             context: context,
             builder: (context) => AdminDialog(
