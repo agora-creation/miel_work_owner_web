@@ -3,11 +3,14 @@ import 'package:miel_work_owner_web/common/functions.dart';
 import 'package:miel_work_owner_web/common/style.dart';
 import 'package:miel_work_owner_web/models/organization.dart';
 import 'package:miel_work_owner_web/models/user.dart';
+import 'package:miel_work_owner_web/providers/organization.dart';
 import 'package:miel_work_owner_web/services/organization.dart';
 import 'package:miel_work_owner_web/services/user.dart';
 import 'package:miel_work_owner_web/widgets/custom_button_sm.dart';
+import 'package:miel_work_owner_web/widgets/custom_checkbox.dart';
 import 'package:miel_work_owner_web/widgets/custom_column_label.dart';
 import 'package:miel_work_owner_web/widgets/custom_text_box.dart';
+import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 
 class OrganizationSource extends DataGridSource {
@@ -143,17 +146,17 @@ class ModDialog extends StatefulWidget {
 }
 
 class _ModDialogState extends State<ModDialog> {
-  OrganizationService organizationService = OrganizationService();
-  TextEditingController organizationNameController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    organizationNameController.text = widget.organization.name;
+    nameController.text = widget.organization.name;
   }
 
   @override
   Widget build(BuildContext context) {
+    final organizationProvider = Provider.of<OrganizationProvider>(context);
     return ContentDialog(
       title: const Text(
         '団体情報を編集する',
@@ -167,7 +170,7 @@ class _ModDialogState extends State<ModDialog> {
             InfoLabel(
               label: '団体名',
               child: CustomTextBox(
-                controller: organizationNameController,
+                controller: nameController,
                 placeholder: '',
                 keyboardType: TextInputType.text,
                 maxLines: 1,
@@ -188,19 +191,15 @@ class _ModDialogState extends State<ModDialog> {
           labelColor: kWhiteColor,
           backgroundColor: kBlueColor,
           onPressed: () async {
-            String? error;
-            if (organizationNameController.text == '') {
-              error = '団体名を入力してください';
-            }
+            String? error = await organizationProvider.update(
+              organization: widget.organization,
+              name: nameController.text,
+            );
             if (error != null) {
               if (!mounted) return;
               showMessage(context, error, false);
               return;
             }
-            organizationService.update({
-              'id': widget.organization.id,
-              'name': organizationNameController.text,
-            });
             if (!mounted) return;
             showMessage(context, '団体情報を編集しました', true);
             Navigator.pop(context);
@@ -249,28 +248,35 @@ class _AdminDialogState extends State<AdminDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final organizationProvider = Provider.of<OrganizationProvider>(context);
     return ContentDialog(
       title: const Text(
         '管理者を選択する',
         style: TextStyle(fontSize: 18),
       ),
-      content: ListView.builder(
-        itemCount: users.length,
-        itemBuilder: (context, index) {
-          UserModel user = users[index];
-          return Checkbox(
-            checked: selectedUsers.contains(user),
-            onChanged: (value) {
-              if (selectedUsers.contains(user)) {
-                selectedUsers.remove(user);
-              } else {
-                selectedUsers.add(user);
-              }
-              setState(() {});
-            },
-            content: Text(user.name),
-          );
-        },
+      content: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: kGrey300Color),
+        ),
+        height: 300,
+        child: ListView.builder(
+          itemCount: users.length,
+          itemBuilder: (context, index) {
+            UserModel user = users[index];
+            return CustomCheckbox(
+              label: user.name,
+              checked: selectedUsers.contains(user),
+              onChanged: (value) {
+                if (selectedUsers.contains(user)) {
+                  selectedUsers.remove(user);
+                } else {
+                  selectedUsers.add(user);
+                }
+                setState(() {});
+              },
+            );
+          },
+        ),
       ),
       actions: [
         CustomButtonSm(
@@ -284,23 +290,15 @@ class _AdminDialogState extends State<AdminDialog> {
           labelColor: kWhiteColor,
           backgroundColor: kBlueColor,
           onPressed: () async {
-            String? error;
-            if (selectedUsers.isEmpty) {
-              error = 'スタッフを一人以上選択してください';
-            }
+            String? error = await organizationProvider.updateAdmin(
+              organization: widget.organization,
+              selectedUsers: selectedUsers,
+            );
             if (error != null) {
               if (!mounted) return;
               showMessage(context, error, false);
               return;
             }
-            List<String> adminUserIds = [];
-            for (UserModel user in selectedUsers) {
-              adminUserIds.add(user.id);
-            }
-            organizationService.update({
-              'id': widget.organization.id,
-              'adminUserIds': adminUserIds,
-            });
             if (!mounted) return;
             showMessage(context, '管理者を選択しました', true);
             Navigator.pop(context);

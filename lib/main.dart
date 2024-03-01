@@ -4,6 +4,7 @@ import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:miel_work_owner_web/common/style.dart';
 import 'package:miel_work_owner_web/providers/login.dart';
+import 'package:miel_work_owner_web/providers/organization.dart';
 import 'package:miel_work_owner_web/screens/home.dart';
 import 'package:miel_work_owner_web/screens/login.dart';
 import 'package:miel_work_owner_web/screens/splash.dart';
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: LoginProvider.initialize()),
+        ChangeNotifierProvider.value(value: OrganizationProvider()),
       ],
       child: FluentApp(
         debugShowCheckedModeBanner: false,

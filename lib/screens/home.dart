@@ -4,10 +4,10 @@ import 'package:miel_work_owner_web/common/functions.dart';
 import 'package:miel_work_owner_web/common/style.dart';
 import 'package:miel_work_owner_web/models/organization.dart';
 import 'package:miel_work_owner_web/providers/login.dart';
+import 'package:miel_work_owner_web/providers/organization.dart';
 import 'package:miel_work_owner_web/screens/login.dart';
 import 'package:miel_work_owner_web/screens/organization_source.dart';
 import 'package:miel_work_owner_web/services/organization.dart';
-import 'package:miel_work_owner_web/services/user.dart';
 import 'package:miel_work_owner_web/widgets/custom_button_sm.dart';
 import 'package:miel_work_owner_web/widgets/custom_column_label.dart';
 import 'package:miel_work_owner_web/widgets/custom_data_grid.dart';
@@ -28,7 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final loginProvider = Provider.of<LoginProvider>(context);
-
     return ScaffoldPage(
       padding: EdgeInsets.zero,
       header: Padding(
@@ -140,15 +139,14 @@ class AddDialog extends StatefulWidget {
 }
 
 class _AddDialogState extends State<AddDialog> {
-  OrganizationService organizationService = OrganizationService();
-  UserService userService = UserService();
-  TextEditingController organizationNameController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
   TextEditingController userNameController = TextEditingController();
   TextEditingController userEmailController = TextEditingController();
   TextEditingController userPasswordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    final organizationProvider = Provider.of<OrganizationProvider>(context);
     return ContentDialog(
       title: const Text(
         '契約団体を追加する',
@@ -162,7 +160,7 @@ class _AddDialogState extends State<AddDialog> {
             InfoLabel(
               label: '団体名',
               child: CustomTextBox(
-                controller: organizationNameController,
+                controller: nameController,
                 placeholder: '',
                 keyboardType: TextInputType.text,
                 maxLines: 1,
@@ -213,47 +211,17 @@ class _AddDialogState extends State<AddDialog> {
           labelColor: kWhiteColor,
           backgroundColor: kBlueColor,
           onPressed: () async {
-            String? error;
-            if (organizationNameController.text == '') {
-              error = '団体名を入力してください';
-            }
-            if (userNameController.text == '') {
-              error = '管理者のお名前を入力してください';
-            }
-            if (userEmailController.text == '') {
-              error = '管理者のメールアドレスを入力してください';
-            }
-            if (userPasswordController.text == '') {
-              error = '管理者のパスワードを入力してください';
-            }
-            if (await userService.emailCheck(
-              email: userEmailController.text,
-            )) {
-              error = '他のメールアドレスを入力してください';
-            }
+            String? error = await organizationProvider.create(
+              name: nameController.text,
+              userName: userNameController.text,
+              userEmail: userEmailController.text,
+              userPassword: userPasswordController.text,
+            );
             if (error != null) {
               if (!mounted) return;
               showMessage(context, error, false);
               return;
             }
-            String userId = userService.id();
-            userService.create({
-              'id': userId,
-              'name': userNameController.text,
-              'email': userEmailController.text,
-              'password': userPasswordController.text,
-              'uid': '',
-              'token': '',
-              'createdAt': DateTime.now(),
-            });
-            String organizationId = organizationService.id();
-            organizationService.create({
-              'id': organizationId,
-              'name': organizationNameController.text,
-              'adminUserIds': [userId],
-              'userIds': [userId],
-              'createdAt': DateTime.now(),
-            });
             if (!mounted) return;
             showMessage(context, '契約団体を追加しました', true);
             Navigator.pop(context);
