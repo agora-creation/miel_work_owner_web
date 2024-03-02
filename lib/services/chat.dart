@@ -23,7 +23,7 @@ class ChatService {
     ChatModel? ret;
     await firestore
         .collection(collection)
-        .where('id', isEqualTo: organizationId)
+        .where('organizationId', isEqualTo: organizationId)
         .where('priority', isEqualTo: 0)
         .get()
         .then((value) {
