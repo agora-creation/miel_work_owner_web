@@ -77,7 +77,7 @@ class OrganizationProvider with ChangeNotifier {
         organizationId: organization.id,
       );
       if (chat != null) {
-        _chatService.create({
+        _chatService.update({
           'id': chat.id,
           'name': name,
         });
