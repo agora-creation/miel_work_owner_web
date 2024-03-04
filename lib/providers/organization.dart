@@ -49,11 +49,10 @@ class OrganizationProvider with ChangeNotifier {
         'id': id,
         'organizationId': organizationId,
         'groupId': '',
-        'userIds': [],
+        'userIds': [userId],
         'name': name,
         'lastMessage': '',
-        'personal': false,
-        'priority': 0,
+        'updatedAt': DateTime.now(),
         'createdAt': DateTime.now(),
       });
     } catch (e) {

@@ -24,7 +24,7 @@ class ChatService {
     await firestore
         .collection(collection)
         .where('organizationId', isEqualTo: organizationId)
-        .where('priority', isEqualTo: 0)
+        .where('groupId', isEqualTo: '')
         .get()
         .then((value) {
       if (value.docs.isNotEmpty) {
