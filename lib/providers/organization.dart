@@ -1,5 +1,4 @@
 import 'package:fluent_ui/fluent_ui.dart';
-import 'package:miel_work_owner_web/models/chat.dart';
 import 'package:miel_work_owner_web/models/organization.dart';
 import 'package:miel_work_owner_web/models/user.dart';
 import 'package:miel_work_owner_web/services/chat.dart';
@@ -50,7 +49,7 @@ class OrganizationProvider with ChangeNotifier {
         'organizationId': organizationId,
         'groupId': '',
         'userIds': [userId],
-        'name': name,
+        'name': '全てのスタッフ',
         'lastMessage': '',
         'updatedAt': DateTime.now(),
         'createdAt': DateTime.now(),
@@ -72,15 +71,6 @@ class OrganizationProvider with ChangeNotifier {
         'id': organization.id,
         'name': name,
       });
-      ChatModel? chat = await _chatService.selectData(
-        organizationId: organization.id,
-      );
-      if (chat != null) {
-        _chatService.update({
-          'id': chat.id,
-          'name': name,
-        });
-      }
     } catch (e) {
       error = '契約団体の編集に失敗しました';
     }
