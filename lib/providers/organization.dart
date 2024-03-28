@@ -1,6 +1,5 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:miel_work_owner_web/models/organization.dart';
-import 'package:miel_work_owner_web/models/user.dart';
 import 'package:miel_work_owner_web/services/chat.dart';
 import 'package:miel_work_owner_web/services/organization.dart';
 import 'package:miel_work_owner_web/services/user.dart';
@@ -33,13 +32,13 @@ class OrganizationProvider with ChangeNotifier {
         'password': userPassword,
         'uid': '',
         'token': '',
+        'admin': true,
         'createdAt': DateTime.now(),
       });
       String organizationId = _organizationService.id();
       _organizationService.create({
         'id': organizationId,
         'name': name,
-        'adminUserIds': [userId],
         'userIds': [userId],
         'createdAt': DateTime.now(),
       });
@@ -73,27 +72,6 @@ class OrganizationProvider with ChangeNotifier {
       });
     } catch (e) {
       error = '契約団体の編集に失敗しました';
-    }
-    return error;
-  }
-
-  Future<String?> updateAdmin({
-    required OrganizationModel organization,
-    required List<UserModel> selectedUsers,
-  }) async {
-    String? error;
-    if (selectedUsers.isEmpty) return 'スタッフを一人以上選択してください';
-    List<String> adminUserIds = [];
-    for (UserModel user in selectedUsers) {
-      adminUserIds.add(user.id);
-    }
-    try {
-      _organizationService.update({
-        'id': organization.id,
-        'adminUserIds': adminUserIds,
-      });
-    } catch (e) {
-      error = '管理者を選択しました';
     }
     return error;
   }
