@@ -33,6 +33,7 @@ class OrganizationProvider with ChangeNotifier {
         'uid': '',
         'token': '',
         'admin': true,
+        'president': true,
         'createdAt': DateTime.now(),
       });
       String organizationId = _organizationService.id();
@@ -40,6 +41,8 @@ class OrganizationProvider with ChangeNotifier {
         'id': organizationId,
         'name': name,
         'userIds': [userId],
+        'loginId': '',
+        'password': '',
         'createdAt': DateTime.now(),
       });
       String id = _chatService.id();
