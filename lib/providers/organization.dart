@@ -43,6 +43,8 @@ class OrganizationProvider with ChangeNotifier {
         'userIds': [userId],
         'loginId': '',
         'password': '',
+        'shiftLoginId': '',
+        'shiftPassword': '',
         'createdAt': DateTime.now(),
       });
       String id = _chatService.id();
